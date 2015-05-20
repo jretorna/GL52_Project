@@ -85,12 +85,12 @@ public class FramePrincipale extends JFrame {
 	}
 
 	private void initButton() throws IOException {
-		this.importMapBtn = new JButton(Messages.getString("View.importMapBtn")); //$NON-NLS-1$
+		this.importMapBtn = new JButton(ViewMessages.getString("View.importMapBtn")); //$NON-NLS-1$
 		this.importMapBtn.setPreferredSize(new Dimension(
 				this.importMapBtn.getText().length() * this.COEF_WIDTH_BTN,
 				this.HEIGHT_BTN));
 		this.importGpsDatasBtn = new JButton(
-				Messages.getString("View.importGpsDataBtn")); //$NON-NLS-1$
+				ViewMessages.getString("View.importGpsDataBtn")); //$NON-NLS-1$
 		this.importGpsDatasBtn.setPreferredSize(new Dimension(
 				this.importGpsDatasBtn.getText().length() * this.COEF_WIDTH_BTN,
 				this.HEIGHT_BTN));
@@ -120,15 +120,15 @@ public class FramePrincipale extends JFrame {
 
 	}
 	private void setToolTipToMenuBtn() {
-		this.importMapBtn.setToolTipText(Messages.getString("View.importMapFile")); //$NON-NLS-1$
-		this.importGpsDatasBtn.setToolTipText(Messages.getString("View.importGpsFile")); //$NON-NLS-1$
-		this.playBtn.setToolTipText(Messages.getString("View.play")); //$NON-NLS-1$
-		this.stopBtn.setToolTipText(Messages.getString("View.stop")); //$NON-NLS-1$
-		this.pauseBtn.setToolTipText(Messages.getString("View.pause")); //$NON-NLS-1$
-		this.zoomInBtn.setToolTipText(Messages.getString("View.zoomIn")); //$NON-NLS-1$
-		this.zoomOutBtn.setToolTipText(Messages.getString("View.zoomOut")); //$NON-NLS-1$
-		this.zoomOverBtn.setToolTipText(Messages.getString("View.zoomBetter")); //$NON-NLS-1$
-		this.zoomBusBtn.setToolTipText(Messages.getString("View.zoomOnBus")); //$NON-NLS-1$
+		this.importMapBtn.setToolTipText(ViewMessages.getString("View.importMapFile")); //$NON-NLS-1$
+		this.importGpsDatasBtn.setToolTipText(ViewMessages.getString("View.importGpsFile")); //$NON-NLS-1$
+		this.playBtn.setToolTipText(ViewMessages.getString("View.play")); //$NON-NLS-1$
+		this.stopBtn.setToolTipText(ViewMessages.getString("View.stop")); //$NON-NLS-1$
+		this.pauseBtn.setToolTipText(ViewMessages.getString("View.pause")); //$NON-NLS-1$
+		this.zoomInBtn.setToolTipText(ViewMessages.getString("View.zoomIn")); //$NON-NLS-1$
+		this.zoomOutBtn.setToolTipText(ViewMessages.getString("View.zoomOut")); //$NON-NLS-1$
+		this.zoomOverBtn.setToolTipText(ViewMessages.getString("View.zoomBetter")); //$NON-NLS-1$
+		this.zoomBusBtn.setToolTipText(ViewMessages.getString("View.zoomOnBus")); //$NON-NLS-1$
 	}
 	private void initPanel() {
 		this.jpButton = new JPanel(new GridBagLayout());
@@ -304,8 +304,8 @@ public class FramePrincipale extends JFrame {
 				if (FramePrincipale.this.map != null) {
 					int retour = JOptionPane.showConfirmDialog(
 							FramePrincipale.this.jf,
-							Messages.getString("View.mapAlreadyExistMsg"),
-							Messages.getString("View.mapAlreadyExistTitle"),
+							ViewMessages.getString("View.mapAlreadyExistMsg"),
+							ViewMessages.getString("View.mapAlreadyExistTitle"),
 							JOptionPane.OK_CANCEL_OPTION);
 					if (retour == JOptionPane.OK_OPTION) {
 						// TODO JR retirer ce com
