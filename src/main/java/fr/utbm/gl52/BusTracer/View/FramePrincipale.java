@@ -53,9 +53,9 @@ public class FramePrincipale extends JFrame {
 	private JLabel stateMapFixLb, stateMapLb, stateGpsFixLb, stateGpsLb,
 			stateRunFixLb, stateRunLb;
 	private JButton importMapBtn, importGpsDatasBtn, playBtn, stopBtn,
-			pauseBtn, zoomInBtn, zoomOutBtn, zoomOverBtn, zoomBusBtn;
+			pauseBtn, zoomInBtn, zoomOutBtn, zoomOverBtn, zoomBusBtn, moverBtn;
 	private BufferedImage playIcon, stopIcon, pauseIcon, zoomInIcon,
-			zoomOutIcon, zoomOverIcon, zoomBusIcon;
+			zoomOutIcon, zoomOverIcon, zoomBusIcon, moverIcon;
 	private MapContent map;
 
 	GestionnaireSuiviListener gestSuiviListener;
@@ -85,7 +85,8 @@ public class FramePrincipale extends JFrame {
 	}
 
 	private void initButton() throws IOException {
-		this.importMapBtn = new JButton(ViewMessages.getString("View.importMapBtn")); //$NON-NLS-1$
+		this.importMapBtn = new JButton(
+				ViewMessages.getString("View.importMapBtn")); //$NON-NLS-1$
 		this.importMapBtn.setPreferredSize(new Dimension(
 				this.importMapBtn.getText().length() * this.COEF_WIDTH_BTN,
 				this.HEIGHT_BTN));
@@ -115,6 +116,9 @@ public class FramePrincipale extends JFrame {
 		this.zoomBusIcon = ImageIO.read(new File("img/zoomBus32.png")); //$NON-NLS-1$
 		this.zoomBusBtn = new JButton(new ImageIcon(this.zoomBusIcon));
 		this.setButtonTranslucent(this.zoomBusBtn);
+		this.moverIcon = ImageIO.read(new File("img/deplacement32.png")); //$NON-NLS-1$
+		this.moverBtn = new JButton(new ImageIcon(this.moverIcon));
+		this.setButtonTranslucent(this.moverBtn);
 
 		setToolTipToMenuBtn();
 
@@ -129,6 +133,7 @@ public class FramePrincipale extends JFrame {
 		this.zoomOutBtn.setToolTipText(ViewMessages.getString("View.zoomOut")); //$NON-NLS-1$
 		this.zoomOverBtn.setToolTipText(ViewMessages.getString("View.zoomBetter")); //$NON-NLS-1$
 		this.zoomBusBtn.setToolTipText(ViewMessages.getString("View.zoomOnBus")); //$NON-NLS-1$
+		this.moverBtn.setToolTipText(ViewMessages.getString("View.mover")); //$NON-NLS-1$
 	}
 	private void initPanel() {
 		this.jpButton = new JPanel(new GridBagLayout());
@@ -144,6 +149,7 @@ public class FramePrincipale extends JFrame {
 		this.jpBtnZoom.add(this.zoomOutBtn);
 		this.jpBtnZoom.add(this.zoomOverBtn);
 		this.jpBtnZoom.add(this.zoomBusBtn);
+		this.jpBtnZoom.add(this.moverBtn);
 
 		/* ---- Placement des boutons de menu ---- */
 		GridBagConstraints gb = new GridBagConstraints();
