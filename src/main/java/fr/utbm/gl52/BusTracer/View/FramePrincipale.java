@@ -1,6 +1,7 @@
 package fr.utbm.gl52.BusTracer.View;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Frame;
@@ -12,6 +13,12 @@ import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
+import java.net.MalformedURLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
@@ -24,9 +31,31 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
+import org.geotools.data.DataStore;
+import org.geotools.data.DataStoreFinder;
+import org.geotools.data.DataUtilities;
+import org.geotools.data.FeatureSource;
+import org.geotools.data.simple.SimpleFeatureCollection;
+import org.geotools.feature.DefaultFeatureCollection;
+import org.geotools.feature.FeatureCollection;
+import org.geotools.feature.FeatureCollections;
+import org.geotools.feature.FeatureIterator;
+import org.geotools.feature.SchemaException;
+import org.geotools.feature.simple.SimpleFeatureBuilder;
+import org.geotools.geometry.jts.JTSFactoryFinder;
+import org.geotools.map.FeatureLayer;
 import org.geotools.map.Layer;
 import org.geotools.map.MapContent;
+import org.geotools.styling.SLD;
+import org.geotools.styling.Style;
 import org.geotools.swing.JMapFrame;
+import org.opengis.feature.simple.SimpleFeature;
+import org.opengis.feature.simple.SimpleFeatureType;
+
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.LineString;
+import com.vividsolutions.jts.geom.Point;
 
 import fr.utbm.gl52.BusTracer.Model.GestionnaireSuivi;
 import fr.utbm.gl52.BusTracer.Model.GestionnaireSuiviListener;
@@ -327,14 +356,70 @@ public class FramePrincipale extends JFrame {
 			@Override
 			public void updateGpsDatas(final String uri) {
 				System.out.println("Import GPS datas : " + uri); //$NON-NLS-1$
-				if (uri.equals(Constantes.STATE_GPS_NOT_LOADING.toString())) {
+				if (!uri.equals(Constantes.STATE_GPS_NOT_LOADING.toString())) {
 					// TODO JR - Si l'on appui sur "annuler" du JFileChooser et
 					// qu'un fichier GPS et d�j� charg�, il faut quand m�me
 					// laisser le state � "loaded"
+
+					Map<String, Serializable> map = new HashMap<>();
+					try {
+						map.put("url", new File(uri).toURI().toURL());
+						DataStore dataStore = DataStoreFinder.getDataStore(map);
+						String typeName = dataStore.getTypeNames()[0];
+
+						FeatureSource source = dataStore.getFeatureSource(typeName);
+						FeatureCollection collection = source.getFeatures();
+						FeatureIterator<SimpleFeature> results = collection.features();
+						List<Coordinate> coords = new ArrayList<Coordinate>();
+						while (results.hasNext()) {
+							SimpleFeature feature = results.next();
+							feature.getAttributes();
+							List<Object> code = feature.getAttributes();
+							// TODO JR retirer ce com
+							// System.out.println(code.size());
+							Point pt = (Point) code.get(0);
+							coords.add(new Coordinate(pt.getX(), pt.getY()));
+							final DrawTrace draw = new DrawTrace();
+							System.out.println("x : " + pt.getX() + " | y : "
+									+ pt.getY());
+							draw.updatePoint(pt);
+							// Thread.sleep(200);
+							// jf.add(new DrawTrace(x, y));
+							repaint();
+						}
+						Coordinate[] coordsTab = convertListToTab(coords);
+						setPointDplct(new File(uri), coordsTab);
+						dataStore.dispose();
+						results.close();
+					} catch (MalformedURLException e) {
+						// TODO JR Auto-generated catch block
+						e.printStackTrace();
+					} catch (IOException e) {
+						// TODO JR Auto-generated catch block
+						e.printStackTrace();
+					} /*
+					 * catch (InterruptedException e) { // TODO JR
+					 * Auto-generated catch block e.printStackTrace(); }
+					 */catch (SchemaException e) {
+						// TODO JR Auto-generated catch block
+						e.printStackTrace();
+					}
+
+					// *----------------------------------------*//
 					FramePrincipale.this.stateGpsLb.setText(Constantes.STATE_GPS_NOT_LOADING);
 				} else {
 					FramePrincipale.this.stateGpsLb.setText(Constantes.STATE_GPS_LOADING);
 				}
+			}
+
+			private Coordinate[] convertListToTab(final List<Coordinate> coords) {
+				Coordinate[] coordsTab = new Coordinate[coords.size()];
+				int i = 0;
+				for (Coordinate c : coords) {
+					coordsTab[i] = c;
+					i++;
+				}
+				return coordsTab;
 			}
 
 			@Override
@@ -420,4 +505,55 @@ public class FramePrincipale extends JFrame {
 		FramePrincipale.this.stateMapLb.setText(Constantes.STATE_MAP_LOADING);
 		FramePrincipale.this.jf.validate();
 	}
+
+	public void setPointDplct(final File file, final Coordinate[] listOfPoints)
+			throws SchemaException {
+		SimpleFeatureType lineType = DataUtilities.createType("LINE",
+				"geom:LineString,name:String");
+		SimpleFeatureBuilder featureBuilderLines = new SimpleFeatureBuilder(
+				lineType);
+		SimpleFeatureCollection collectionLines = FeatureCollections.newCollection();
+		GeometryFactory geoFactory = JTSFactoryFinder.getGeometryFactory();
+		LineString line = geoFactory.createLineString(listOfPoints);
+		featureBuilderLines.add(line);
+		SimpleFeature featureLine = featureBuilderLines.buildFeature(null);
+		((DefaultFeatureCollection) collectionLines).add(featureLine);
+		Style lineStyle = SLD.createLineStyle(Color.RED, 2.0f);
+		map.addLayer(new FeatureLayer(collectionLines, lineStyle));
+	}
+
+	// public Layer getFlickrLayer() {
+	//
+	// SimpleFeatureTypeBuilder b = new SimpleFeatureTypeBuilder();
+	//
+	// b.setName("pictures");
+	// b.setCRS(DefaultGeographicCRS.WGS84);
+	// // picture location
+	// b.add("geom", Point.class);
+	// // picture url
+	// b.add("url", String.class);
+	//
+	// final SimpleFeatureType TYPE = DataUtilities.createType("Location",
+	// "the_geom:Point," + "name:String");
+	//
+	// SimpleFeatureCollection collection = FeatureCollections.newCollection();
+	// SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(TYPE);
+	// WKTReader2 wkt = new WKTReader2();
+	//
+	// float lat = 10.0f;
+	// float lng = 10.0f;
+	// GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory();
+	// Point point = geometryFactory.createPoint(new Coordinate(lng, lat));
+	// featureBuilder.add(point);
+	// Style style = SLD.createPointStyle("Star", Color.BLUE, Color.BLUE,
+	// 0.3f, 15);
+	// SimpleFeature feature = featureBuilder.buildFeature(null);
+	// collection.add(feature);
+	// Layer flickrLayer = new FeatureLayer(collection, style);
+	//
+	// flickrLayer.setTitle("flickr layer");
+	//
+	// return flickrLayer;
+	//
+	// }
 }

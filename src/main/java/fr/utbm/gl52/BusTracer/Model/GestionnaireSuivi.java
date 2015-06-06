@@ -47,7 +47,7 @@ public class GestionnaireSuivi {
 			// TODO JR retirer ce com
 			System.out.println(choix.getSelectedFile().getAbsolutePath());
 			// TODO JR - modifier l'extension
-			String[] ext = {"png"};
+			String[] ext = {"shp", "SHP"};
 			if (TraitementFichier.hasCorrectExtension(
 					choix.getSelectedFile().getAbsolutePath().toString(), ext)) {
 				fireGpsDatas(choix.getSelectedFile().getAbsolutePath());
