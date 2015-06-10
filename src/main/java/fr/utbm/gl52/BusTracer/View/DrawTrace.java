@@ -6,6 +6,10 @@ import java.awt.Graphics2D;
 
 import javax.swing.JPanel;
 
+import org.geotools.geometry.jts.JTSFactoryFinder;
+
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
 
 public class DrawTrace extends JPanel {
@@ -32,7 +36,24 @@ public class DrawTrace extends JPanel {
 	}
 
 	public void updatePoint(final Point _pt) {
+		try {
+			Thread.sleep(20);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		pt = _pt;
+		repaint();
+	}
+
+	public void updatePoint(final Coordinate _coord) {
+		GeometryFactory geoFactory = JTSFactoryFinder.getGeometryFactory();
+
+		pt = geoFactory.createPoint(_coord);
+		try {
+			Thread.sleep(2);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		repaint();
 	}
 }

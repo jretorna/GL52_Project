@@ -33,6 +33,8 @@ public class Constantes {
 	public static String STATE_WORKING_RUNNING = UtilsMessages.getString("Utils.workingRunning"); //$NON-NLS-1$
 	public static String STATE_WORKING_PAUSE = UtilsMessages.getString("Utils.workingPause"); //$NON-NLS-1$
 
+	public static String PROBLEM_ON_RUN_LAUNCHER = UtilsMessages.getString("Utils.problemRunLauncher"); //$NON-NLS-1$
+
 	public static final int ID_MAP = 1;
 	public static final int ID_GPS = 2;
 }

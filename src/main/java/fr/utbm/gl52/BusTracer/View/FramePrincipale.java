@@ -1,7 +1,6 @@
 package fr.utbm.gl52.BusTracer.View;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Frame;
@@ -10,15 +9,15 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.io.Serializable;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
@@ -31,31 +30,14 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
-import org.geotools.data.DataStore;
-import org.geotools.data.DataStoreFinder;
-import org.geotools.data.DataUtilities;
-import org.geotools.data.FeatureSource;
-import org.geotools.data.simple.SimpleFeatureCollection;
-import org.geotools.feature.DefaultFeatureCollection;
-import org.geotools.feature.FeatureCollection;
-import org.geotools.feature.FeatureCollections;
-import org.geotools.feature.FeatureIterator;
-import org.geotools.feature.SchemaException;
-import org.geotools.feature.simple.SimpleFeatureBuilder;
-import org.geotools.geometry.jts.JTSFactoryFinder;
-import org.geotools.map.FeatureLayer;
+import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.geotools.map.Layer;
 import org.geotools.map.MapContent;
-import org.geotools.styling.SLD;
-import org.geotools.styling.Style;
+import org.geotools.renderer.lite.StreamingRenderer;
 import org.geotools.swing.JMapFrame;
-import org.opengis.feature.simple.SimpleFeature;
-import org.opengis.feature.simple.SimpleFeatureType;
+import org.geotools.swing.JMapPane;
 
 import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.LineString;
-import com.vividsolutions.jts.geom.Point;
 
 import fr.utbm.gl52.BusTracer.Model.GestionnaireSuivi;
 import fr.utbm.gl52.BusTracer.Model.GestionnaireSuiviListener;
@@ -77,6 +59,7 @@ public class FramePrincipale extends JFrame {
 	int HEIGHT_BTN = 32;
 	int COEF_WIDTH_BTN = 10;
 	private JMapFrame jf;
+	private JMapPane mapPane;
 	private JPanel jp, jpButton, jpBtnImport, jpBtnCtrl, jpBtnZoom, jpHeader,
 			jpState;
 	private JLabel stateMapFixLb, stateMapLb, stateGpsFixLb, stateGpsLb,
@@ -86,6 +69,10 @@ public class FramePrincipale extends JFrame {
 	private BufferedImage playIcon, stopIcon, pauseIcon, zoomInIcon,
 			zoomOutIcon, zoomOverIcon, zoomBusIcon, moverIcon;
 	private MapContent map;
+	private double widthMap;
+	private double heightMap;
+
+	List<Coordinate> coords = new ArrayList<Coordinate>();
 
 	GestionnaireSuiviListener gestSuiviListener;
 	GestionnaireSuivi gestSuivi;
@@ -165,6 +152,8 @@ public class FramePrincipale extends JFrame {
 		this.moverBtn.setToolTipText(ViewMessages.getString("View.mover")); //$NON-NLS-1$
 	}
 	private void initPanel() {
+		this.mapPane = new JMapPane();
+		this.mapPane.setRenderer(new StreamingRenderer());
 		this.jpButton = new JPanel(new GridBagLayout());
 		this.jpBtnImport = new JPanel(new FlowLayout());
 		this.jpBtnImport.add(this.importMapBtn);
@@ -273,11 +262,32 @@ public class FramePrincipale extends JFrame {
 
 	private void initListeners() {
 
+		/*----------- Windows ----------------*/
+		jf.addComponentListener(new ComponentListener() {
+
+			@Override
+			public void componentShown(final ComponentEvent arg0) {
+				// not use here
+			}
+			@Override
+			public void componentResized(final ComponentEvent arg0) {
+				getDimensionMapPane();
+			}
+			@Override
+			public void componentMoved(final ComponentEvent arg0) {
+				// not use here
+			}
+			@Override
+			public void componentHidden(final ComponentEvent arg0) {
+				// not use here
+			}
+		});
+
 		/*--------------- GPS DATAS FILE -----------------*/
 		this.importGpsDatasBtn.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(final ActionEvent arg0) {
-				FramePrincipale.this.gestSuivi.chooseGpsDataFile();
+				FramePrincipale.this.gestSuivi.loadDataCoordinate();
 			}
 		});
 
@@ -295,7 +305,7 @@ public class FramePrincipale extends JFrame {
 			@Override
 			public void actionPerformed(final ActionEvent e) {
 				changeIconLook("play"); //$NON-NLS-1$
-				FramePrincipale.this.gestSuivi.launchAcquisition();
+				FramePrincipale.this.gestSuivi.launchAcquisition(coords);
 			}
 		});
 
@@ -315,11 +325,53 @@ public class FramePrincipale extends JFrame {
 			}
 		});
 
+		/* ----- ZOOM PARTS ----- */
+
+		zoomInBtn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(final ActionEvent e) {
+				gestSuivi.zoomInOrOut(-1, jf.getMapPane().getDisplayArea());
+			}
+		});
+
+		zoomOutBtn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(final ActionEvent e) {
+				gestSuivi.zoomInOrOut(1, jf.getMapPane().getDisplayArea());
+			}
+		});
+
+		zoomOverBtn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(final ActionEvent e) {
+				setZoomOver();
+			}
+		});
+
+		/* ---- MOVING PART ---- */
+
+		moverBtn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(final ActionEvent e) {
+
+				AffineTransform translate = AffineTransform.getTranslateInstance(
+						-50000, -50000);
+				Point2D p = new Point2D.Double(jf.getMapPane().getWidth(),
+						jf.getMapPane().getHeight());
+				translate.transform(p, null);
+			}
+		});
+
 		this.gestSuiviListener = new GestionnaireSuiviListener() {
 			@Override
-			public void play() {
-				// TODO JR retirer ce com
-				System.out.println("Launch Acquisition"); //$NON-NLS-1$
+			public void play(final Layer layer) {
+				SwingUtilities.invokeLater(new Runnable() {
+					@Override
+					public void run() {
+						map.addLayer(layer);
+						repaint();
+					}
+				});
 			}
 
 			@Override
@@ -334,8 +386,6 @@ public class FramePrincipale extends JFrame {
 
 			@Override
 			public void updateMap(final Layer layer) {
-				// TODO JR retirer ce com
-				System.out.println("Loading map : " + layer); //$NON-NLS-1$
 				if (FramePrincipale.this.map != null) {
 					int retour = JOptionPane.showConfirmDialog(
 							FramePrincipale.this.jf,
@@ -343,92 +393,32 @@ public class FramePrincipale extends JFrame {
 							ViewMessages.getString("View.mapAlreadyExistTitle"),
 							JOptionPane.OK_CANCEL_OPTION);
 					if (retour == JOptionPane.OK_OPTION) {
-						// TODO JR retirer ce com
-						System.out.println("**** Suppression map en cours ****"); //$NON-NLS-1$
 						FramePrincipale.this.map = null;
 						addNewMap(layer);
+						getDimensionMapPane();
 					}
 				} else {
 					addNewMap(layer);
+					getDimensionMapPane();
 				}
 			}
 
 			@Override
-			public void updateGpsDatas(final String uri) {
-				System.out.println("Import GPS datas : " + uri); //$NON-NLS-1$
-				if (!uri.equals(Constantes.STATE_GPS_NOT_LOADING.toString())) {
-					// TODO JR - Si l'on appui sur "annuler" du JFileChooser et
-					// qu'un fichier GPS et d�j� charg�, il faut quand m�me
-					// laisser le state � "loaded"
-
-					Map<String, Serializable> map = new HashMap<>();
-					try {
-						map.put("url", new File(uri).toURI().toURL());
-						DataStore dataStore = DataStoreFinder.getDataStore(map);
-						String typeName = dataStore.getTypeNames()[0];
-
-						FeatureSource source = dataStore.getFeatureSource(typeName);
-						FeatureCollection collection = source.getFeatures();
-						FeatureIterator<SimpleFeature> results = collection.features();
-						List<Coordinate> coords = new ArrayList<Coordinate>();
-						while (results.hasNext()) {
-							SimpleFeature feature = results.next();
-							feature.getAttributes();
-							List<Object> code = feature.getAttributes();
-							// TODO JR retirer ce com
-							// System.out.println(code.size());
-							Point pt = (Point) code.get(0);
-							coords.add(new Coordinate(pt.getX(), pt.getY()));
-							final DrawTrace draw = new DrawTrace();
-							System.out.println("x : " + pt.getX() + " | y : "
-									+ pt.getY());
-							draw.updatePoint(pt);
-							// Thread.sleep(200);
-							// jf.add(new DrawTrace(x, y));
-							repaint();
-						}
-						Coordinate[] coordsTab = convertListToTab(coords);
-						setPointDplct(new File(uri), coordsTab);
-						dataStore.dispose();
-						results.close();
-					} catch (MalformedURLException e) {
-						// TODO JR Auto-generated catch block
-						e.printStackTrace();
-					} catch (IOException e) {
-						// TODO JR Auto-generated catch block
-						e.printStackTrace();
-					} /*
-					 * catch (InterruptedException e) { // TODO JR
-					 * Auto-generated catch block e.printStackTrace(); }
-					 */catch (SchemaException e) {
-						// TODO JR Auto-generated catch block
-						e.printStackTrace();
-					}
-
-					// *----------------------------------------*//
-					FramePrincipale.this.stateGpsLb.setText(Constantes.STATE_GPS_NOT_LOADING);
-				} else {
-					FramePrincipale.this.stateGpsLb.setText(Constantes.STATE_GPS_LOADING);
-				}
-			}
-
-			private Coordinate[] convertListToTab(final List<Coordinate> coords) {
-				Coordinate[] coordsTab = new Coordinate[coords.size()];
-				int i = 0;
-				for (Coordinate c : coords) {
-					coordsTab[i] = c;
-					i++;
-				}
-				return coordsTab;
+			public void updateGpsDatas(final List<Coordinate> _coords) {
+				coords = _coords;
 			}
 
 			@Override
 			public void error(	final int _id,
 								final String _msg,
 								final String _state) {
-				JOptionPane.showMessageDialog(FramePrincipale.this.jf, _msg,
-						Constantes.ERROR_MSG, JOptionPane.ERROR_MESSAGE);
+				showOptionPane(_msg);
 				setErrorState(_id, _state);
+			}
+
+			@Override
+			public void zoomInOrOut(final ReferencedEnvelope env) {
+				jf.getMapPane().setDisplayArea(env);
 			}
 		};
 		this.gestSuivi.addGestionnaireSuiviListener(this.gestSuiviListener);
@@ -440,17 +430,14 @@ public class FramePrincipale extends JFrame {
 			UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel"); //$NON-NLS-1$
 			SwingUtilities.updateComponentTreeUI(this.jf);
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
+			showOptionPane(ViewMessages.getString("View.problemSetLookAndFeel"));//$NON-NLS-1$
 		} catch (InstantiationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			showOptionPane(ViewMessages.getString("View.problemSetLookAndFeel"));//$NON-NLS-1$
 		} catch (IllegalAccessException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			showOptionPane(ViewMessages.getString("View.problemSetLookAndFeel"));//$NON-NLS-1$
 		} catch (UnsupportedLookAndFeelException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			showOptionPane(ViewMessages.getString("View.problemSetLookAndFeel"));//$NON-NLS-1$
 		}
 	}
 
@@ -480,8 +467,7 @@ public class FramePrincipale extends JFrame {
 			this.stopBtn.setEnabled(false);
 			this.stateRunLb.setText(Constantes.STATE_WORKING_STOPPED);
 		} else {
-			// TODO JR retirer ce com
-			System.out.println("A problem occurs..."); //$NON-NLS-1$
+			showOptionPane(ViewMessages.getString("View.problemIconLook"));//$NON-NLS-1$
 		}
 	}
 
@@ -498,62 +484,32 @@ public class FramePrincipale extends JFrame {
 		}
 	}
 
+	private void getDimensionMapPane() {
+		if (jf.getMapContent() != null) {
+			jf.getMapContent().getMaxBounds();
+			ReferencedEnvelope env = jf.getMapContent().getMaxBounds();
+			widthMap = env.getWidth();
+			heightMap = env.getHeight();
+		}
+	}
+
+	private void setZoomOver() {
+		ReferencedEnvelope env = jf.getMapPane().getDisplayArea();
+		env.expandBy(widthMap, heightMap);
+		jf.getMapPane().setDisplayArea(env);
+	}
+
 	private void addNewMap(final Layer layer) {
 		map = new MapContent();
 		map.addLayer(layer);
 		jf.setMapContent(map);
+
 		FramePrincipale.this.stateMapLb.setText(Constantes.STATE_MAP_LOADING);
 		FramePrincipale.this.jf.validate();
 	}
 
-	public void setPointDplct(final File file, final Coordinate[] listOfPoints)
-			throws SchemaException {
-		SimpleFeatureType lineType = DataUtilities.createType("LINE",
-				"geom:LineString,name:String");
-		SimpleFeatureBuilder featureBuilderLines = new SimpleFeatureBuilder(
-				lineType);
-		SimpleFeatureCollection collectionLines = FeatureCollections.newCollection();
-		GeometryFactory geoFactory = JTSFactoryFinder.getGeometryFactory();
-		LineString line = geoFactory.createLineString(listOfPoints);
-		featureBuilderLines.add(line);
-		SimpleFeature featureLine = featureBuilderLines.buildFeature(null);
-		((DefaultFeatureCollection) collectionLines).add(featureLine);
-		Style lineStyle = SLD.createLineStyle(Color.RED, 2.0f);
-		map.addLayer(new FeatureLayer(collectionLines, lineStyle));
+	private void showOptionPane(final String _msg) {
+		JOptionPane.showMessageDialog(FramePrincipale.this.jf, _msg,
+				Constantes.ERROR_MSG, JOptionPane.ERROR_MESSAGE);
 	}
-
-	// public Layer getFlickrLayer() {
-	//
-	// SimpleFeatureTypeBuilder b = new SimpleFeatureTypeBuilder();
-	//
-	// b.setName("pictures");
-	// b.setCRS(DefaultGeographicCRS.WGS84);
-	// // picture location
-	// b.add("geom", Point.class);
-	// // picture url
-	// b.add("url", String.class);
-	//
-	// final SimpleFeatureType TYPE = DataUtilities.createType("Location",
-	// "the_geom:Point," + "name:String");
-	//
-	// SimpleFeatureCollection collection = FeatureCollections.newCollection();
-	// SimpleFeatureBuilder featureBuilder = new SimpleFeatureBuilder(TYPE);
-	// WKTReader2 wkt = new WKTReader2();
-	//
-	// float lat = 10.0f;
-	// float lng = 10.0f;
-	// GeometryFactory geometryFactory = JTSFactoryFinder.getGeometryFactory();
-	// Point point = geometryFactory.createPoint(new Coordinate(lng, lat));
-	// featureBuilder.add(point);
-	// Style style = SLD.createPointStyle("Star", Color.BLUE, Color.BLUE,
-	// 0.3f, 15);
-	// SimpleFeature feature = featureBuilder.buildFeature(null);
-	// collection.add(feature);
-	// Layer flickrLayer = new FeatureLayer(collection, style);
-	//
-	// flickrLayer.setTitle("flickr layer");
-	//
-	// return flickrLayer;
-	//
-	// }
 }
