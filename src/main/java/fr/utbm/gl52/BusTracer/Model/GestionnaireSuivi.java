@@ -14,6 +14,7 @@ import com.vividsolutions.jts.geom.Coordinate;
 
 import fr.utbm.gl52.BusTracer.DataCoordinate.DataCoordinateManager;
 import fr.utbm.gl52.BusTracer.Map.MapManager;
+import fr.utbm.gl52.BusTracer.Model.Move.MoveManager;
 import fr.utbm.gl52.BusTracer.Model.Zoom.ZoomManager;
 import fr.utbm.gl52.BusTracer.Utils.Constantes;
 import fr.utbm.gl52.BusTracer.Utils.TraitementFichier;
@@ -32,6 +33,7 @@ public class GestionnaireSuivi {
 	MapManager mapManager = null;
 	TraitementFichier treatFile = null;
 	ZoomManager zoomManager = null;
+	MoveManager moveManager = null;
 	/* ---------------------------- */
 
 	/**
@@ -46,6 +48,7 @@ public class GestionnaireSuivi {
 		treatFile = new TraitementFichier();
 		mapManager = new MapManager();
 		zoomManager = new ZoomManager();
+		moveManager = new MoveManager();
 	}
 
 	public void loadDataCoordinate() {
@@ -93,6 +96,12 @@ public class GestionnaireSuivi {
 
 	public void zoomInOrOut(final int _sign, final ReferencedEnvelope env) {
 		fireZoomInOrOut(zoomManager.ZoomPlusOrMoins(_sign, env));
+	}
+
+	/*----------- Move methods -----------------*/
+	public void move(final int sens, final ReferencedEnvelope env) {
+		// TODO Auto-generated method stub
+		fireMove(moveManager.move(sens, env));
 	}
 
 	/*-------- Private methods ----------------*/
@@ -176,6 +185,15 @@ public class GestionnaireSuivi {
 		GestionnaireSuiviListener[] listenerList = this.eventListener.getListeners(GestionnaireSuiviListener.class);
 		for (GestionnaireSuiviListener listener : listenerList) {
 			listener.zoomInOrOut(env);
+		}
+	}
+
+	/*--------- Move Methods ----------*/
+
+	private void fireMove(final ReferencedEnvelope env) {
+		GestionnaireSuiviListener[] listenerList = this.eventListener.getListeners(GestionnaireSuiviListener.class);
+		for (GestionnaireSuiviListener listener : listenerList) {
+			listener.move(env);
 		}
 	}
 }

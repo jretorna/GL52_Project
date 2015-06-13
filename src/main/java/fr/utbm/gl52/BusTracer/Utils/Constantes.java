@@ -35,6 +35,14 @@ public class Constantes {
 
 	public static String PROBLEM_ON_RUN_LAUNCHER = UtilsMessages.getString("Utils.problemRunLauncher"); //$NON-NLS-1$
 
+	public static final int PAS_MOVE = 2000;
+
 	public static final int ID_MAP = 1;
 	public static final int ID_GPS = 2;
+
+	public static final int MOVE_TOP = 3;
+	public static final int MOVE_RIGHT = 4;
+	public static final int MOVE_BOTTOM = 5;
+	public static final int MOVE_LEFT = 6;
+
 }

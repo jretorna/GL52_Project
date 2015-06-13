@@ -2,12 +2,11 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.emportella</groupId>
-    <artifactId>ShapeView</artifactId>
+    <groupId>fr.utbm.gl52</groupId>
+    <artifactId>BusTracer</artifactId>
     <version>1.0</version>
     <packaging>jar</packaging>
-    <name>ShapeView</name>
-    <url>http://github.com/emportella/ShapeView</url>
+    <name>BusTracer</name>
         
     <build>
         <plugins>
@@ -95,4 +94,5 @@
             <version>${geotools.version}</version>
         </dependency>
     </dependencies>
+    <url>https://github.com/jretorna/GL52_Project.git</url>
 </project>

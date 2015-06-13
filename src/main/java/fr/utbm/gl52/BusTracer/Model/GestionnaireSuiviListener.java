@@ -31,5 +31,7 @@ public interface GestionnaireSuiviListener extends EventListener {
 	void error(int _id, String _msg, String _state);
 	/* Zoom In or Out */
 	void zoomInOrOut(ReferencedEnvelope env);
+	/* move */
+	void move(ReferencedEnvelope env);
 
 }

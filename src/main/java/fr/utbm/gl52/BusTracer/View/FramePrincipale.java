@@ -11,8 +11,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -36,6 +34,7 @@ import org.geotools.map.MapContent;
 import org.geotools.renderer.lite.StreamingRenderer;
 import org.geotools.swing.JMapFrame;
 import org.geotools.swing.JMapPane;
+import org.geotools.swing.tool.CursorTool;
 
 import com.vividsolutions.jts.geom.Coordinate;
 
@@ -51,7 +50,7 @@ import fr.utbm.gl52.BusTracer.Utils.Constantes;
  * 
  */
 
-public class FramePrincipale extends JFrame {
+public class FramePrincipale extends CursorTool {
 
 	private static final long serialVersionUID = 1L;
 	/*-------------------*/
@@ -61,13 +60,15 @@ public class FramePrincipale extends JFrame {
 	private JMapFrame jf;
 	private JMapPane mapPane;
 	private JPanel jp, jpButton, jpBtnImport, jpBtnCtrl, jpBtnZoom, jpHeader,
-			jpState;
+			jpBtnMove, jpState;
 	private JLabel stateMapFixLb, stateMapLb, stateGpsFixLb, stateGpsLb,
 			stateRunFixLb, stateRunLb;
 	private JButton importMapBtn, importGpsDatasBtn, playBtn, stopBtn,
-			pauseBtn, zoomInBtn, zoomOutBtn, zoomOverBtn, zoomBusBtn, moverBtn;
+			pauseBtn, zoomInBtn, zoomOutBtn, zoomOverBtn, zoomBusBtn,
+			moveLeftBtn, moveTopBtn, moveRightBtn, moveBottomBtn;
 	private BufferedImage playIcon, stopIcon, pauseIcon, zoomInIcon,
-			zoomOutIcon, zoomOverIcon, zoomBusIcon, moverIcon;
+			zoomOutIcon, zoomOverIcon, zoomBusIcon, moveLeftIcon, moveTopIcon,
+			moveBottomIcon, moveRightIcon;
 	private MapContent map;
 	private double widthMap;
 	private double heightMap;
@@ -132,9 +133,18 @@ public class FramePrincipale extends JFrame {
 		this.zoomBusIcon = ImageIO.read(new File("img/zoomBus32.png")); //$NON-NLS-1$
 		this.zoomBusBtn = new JButton(new ImageIcon(this.zoomBusIcon));
 		this.setButtonTranslucent(this.zoomBusBtn);
-		this.moverIcon = ImageIO.read(new File("img/deplacement32.png")); //$NON-NLS-1$
-		this.moverBtn = new JButton(new ImageIcon(this.moverIcon));
-		this.setButtonTranslucent(this.moverBtn);
+		this.moveLeftIcon = ImageIO.read(new File("img/gauche32.png")); //$NON-NLS-1$
+		this.moveLeftBtn = new JButton(new ImageIcon(this.moveLeftIcon));
+		this.setButtonTranslucent(this.moveLeftBtn);
+		this.moveRightIcon = ImageIO.read(new File("img/droite32.png")); //$NON-NLS-1$
+		this.moveRightBtn = new JButton(new ImageIcon(this.moveRightIcon));
+		this.setButtonTranslucent(this.moveRightBtn);
+		this.moveTopIcon = ImageIO.read(new File("img/haut32.png")); //$NON-NLS-1$
+		this.moveTopBtn = new JButton(new ImageIcon(this.moveTopIcon));
+		this.setButtonTranslucent(this.moveTopBtn);
+		this.moveBottomIcon = ImageIO.read(new File("img/bas32.png")); //$NON-NLS-1$
+		this.moveBottomBtn = new JButton(new ImageIcon(this.moveBottomIcon));
+		this.setButtonTranslucent(this.moveBottomBtn);
 
 		setToolTipToMenuBtn();
 
@@ -149,7 +159,10 @@ public class FramePrincipale extends JFrame {
 		this.zoomOutBtn.setToolTipText(ViewMessages.getString("View.zoomOut")); //$NON-NLS-1$
 		this.zoomOverBtn.setToolTipText(ViewMessages.getString("View.zoomBetter")); //$NON-NLS-1$
 		this.zoomBusBtn.setToolTipText(ViewMessages.getString("View.zoomOnBus")); //$NON-NLS-1$
-		this.moverBtn.setToolTipText(ViewMessages.getString("View.mover")); //$NON-NLS-1$
+		this.moveTopBtn.setToolTipText(ViewMessages.getString("View.moveTop")); //$NON-NLS-1$
+		this.moveBottomBtn.setToolTipText(ViewMessages.getString("View.moveBottom")); //$NON-NLS-1$
+		this.moveRightBtn.setToolTipText(ViewMessages.getString("View.moveRight")); //$NON-NLS-1$
+		this.moveLeftBtn.setToolTipText(ViewMessages.getString("View.moveLeft")); //$NON-NLS-1$
 	}
 	private void initPanel() {
 		this.mapPane = new JMapPane();
@@ -167,7 +180,11 @@ public class FramePrincipale extends JFrame {
 		this.jpBtnZoom.add(this.zoomOutBtn);
 		this.jpBtnZoom.add(this.zoomOverBtn);
 		this.jpBtnZoom.add(this.zoomBusBtn);
-		this.jpBtnZoom.add(this.moverBtn);
+		this.jpBtnMove = new JPanel(new FlowLayout());
+		this.jpBtnMove.add(this.moveLeftBtn);
+		this.jpBtnMove.add(this.moveRightBtn);
+		this.jpBtnMove.add(this.moveTopBtn);
+		this.jpBtnMove.add(this.moveBottomBtn);
 
 		/* ---- Placement des boutons de menu ---- */
 		GridBagConstraints gb = new GridBagConstraints();
@@ -188,6 +205,12 @@ public class FramePrincipale extends JFrame {
 		gb.gridwidth = 1;
 		gb.insets = new Insets(0, 10, 0, 20);
 		this.jpButton.add(this.jpBtnZoom, gb);
+
+		gb.gridx = 3;
+		gb.gridy = 0;
+		gb.gridwidth = 1;
+		gb.insets = new Insets(0, 10, 0, 20);
+		this.jpButton.add(this.jpBtnMove, gb);
 
 		/* ---- Placement des boutons state ---- */
 		gb = null;
@@ -287,7 +310,11 @@ public class FramePrincipale extends JFrame {
 		this.importGpsDatasBtn.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(final ActionEvent arg0) {
-				FramePrincipale.this.gestSuivi.loadDataCoordinate();
+				if (map != null) {
+					FramePrincipale.this.gestSuivi.loadDataCoordinate();
+				} else {
+					showOptionPane(ViewMessages.getString("View.errorSelectMapBefore"));
+				}
 			}
 		});
 
@@ -350,17 +377,55 @@ public class FramePrincipale extends JFrame {
 
 		/* ---- MOVING PART ---- */
 
-		moverBtn.addActionListener(new ActionListener() {
+		moveRightBtn.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(final ActionEvent e) {
-
-				AffineTransform translate = AffineTransform.getTranslateInstance(
-						-50000, -50000);
-				Point2D p = new Point2D.Double(jf.getMapPane().getWidth(),
-						jf.getMapPane().getHeight());
-				translate.transform(p, null);
+				gestSuivi.move(Constantes.MOVE_RIGHT,
+						jf.getMapPane().getDisplayArea());
+				// ReferencedEnvelope env = jf.getMapPane().getDisplayArea();
+				// // TODO JR retirer ce com
+				// System.out.println("appui");
+				// double minX = env.getMinX();
+				// double maxX = env.getMaxX();
+				// double minY = env.getMinY();
+				// double maxY = env.getMaxY();
+				// // TODO JR retirer ce com
+				// System.out.println(minX + " , " + maxX + " , " + minY + " , "
+				// + maxY);
+				// env.init(minX - 4000, maxX - 4000, minY, maxY);
+				// jf.getMapPane().setDisplayArea(env);
+				// // TODO JR retirer ce com
+				// System.out.println(env.getMinX() + " , " + env.getMaxX()
+				// + " , " + env.getMinY() + " , " + env.getMaxY());
+				// jf.repaint();
 			}
 		});
+
+		moveLeftBtn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(final ActionEvent e) {
+				gestSuivi.move(Constantes.MOVE_LEFT,
+						jf.getMapPane().getDisplayArea());
+			}
+		});
+
+		moveTopBtn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(final ActionEvent e) {
+				gestSuivi.move(Constantes.MOVE_TOP,
+						jf.getMapPane().getDisplayArea());
+			}
+		});
+
+		moveBottomBtn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(final ActionEvent e) {
+				gestSuivi.move(Constantes.MOVE_BOTTOM,
+						jf.getMapPane().getDisplayArea());
+			}
+		});
+
+		/*---- FIRE PART -----*/
 
 		this.gestSuiviListener = new GestionnaireSuiviListener() {
 			@Override
@@ -369,7 +434,7 @@ public class FramePrincipale extends JFrame {
 					@Override
 					public void run() {
 						map.addLayer(layer);
-						repaint();
+						jf.repaint();
 					}
 				});
 			}
@@ -406,6 +471,7 @@ public class FramePrincipale extends JFrame {
 			@Override
 			public void updateGpsDatas(final List<Coordinate> _coords) {
 				coords = _coords;
+				FramePrincipale.this.stateGpsLb.setText(Constantes.STATE_GPS_LOADING);
 			}
 
 			@Override
@@ -419,6 +485,12 @@ public class FramePrincipale extends JFrame {
 			@Override
 			public void zoomInOrOut(final ReferencedEnvelope env) {
 				jf.getMapPane().setDisplayArea(env);
+			}
+
+			@Override
+			public void move(final ReferencedEnvelope env) {
+				jf.getMapPane().setDisplayArea(env);
+				jf.repaint();
 			}
 		};
 		this.gestSuivi.addGestionnaireSuiviListener(this.gestSuiviListener);
@@ -502,8 +574,7 @@ public class FramePrincipale extends JFrame {
 	private void addNewMap(final Layer layer) {
 		map = new MapContent();
 		map.addLayer(layer);
-		jf.setMapContent(map);
-
+		jf.getMapPane().setMapContent(map);
 		FramePrincipale.this.stateMapLb.setText(Constantes.STATE_MAP_LOADING);
 		FramePrincipale.this.jf.validate();
 	}
