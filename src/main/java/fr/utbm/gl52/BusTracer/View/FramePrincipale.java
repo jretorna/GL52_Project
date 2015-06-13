@@ -371,7 +371,20 @@ public class FramePrincipale extends CursorTool {
 		zoomOverBtn.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(final ActionEvent e) {
-				setZoomOver();
+				gestSuivi.zoomOver(jf.getMapPane().getDisplayArea(), widthMap,
+						heightMap);
+			}
+		});
+
+		zoomBusBtn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(final ActionEvent e) {
+				if (coords != null && coords.size() >= 2) {
+					Coordinate coordA = coords.get(0);
+					Coordinate coordB = coords.get(coords.size() - 1);
+					gestSuivi.zoomOnBus(jf.getMapPane().getDisplayArea(),
+							coordA, coordB);
+				}
 			}
 		});
 
@@ -382,22 +395,6 @@ public class FramePrincipale extends CursorTool {
 			public void actionPerformed(final ActionEvent e) {
 				gestSuivi.move(Constantes.MOVE_RIGHT,
 						jf.getMapPane().getDisplayArea());
-				// ReferencedEnvelope env = jf.getMapPane().getDisplayArea();
-				// // TODO JR retirer ce com
-				// System.out.println("appui");
-				// double minX = env.getMinX();
-				// double maxX = env.getMaxX();
-				// double minY = env.getMinY();
-				// double maxY = env.getMaxY();
-				// // TODO JR retirer ce com
-				// System.out.println(minX + " , " + maxX + " , " + minY + " , "
-				// + maxY);
-				// env.init(minX - 4000, maxX - 4000, minY, maxY);
-				// jf.getMapPane().setDisplayArea(env);
-				// // TODO JR retirer ce com
-				// System.out.println(env.getMinX() + " , " + env.getMaxX()
-				// + " , " + env.getMinY() + " , " + env.getMaxY());
-				// jf.repaint();
 			}
 		});
 
@@ -488,6 +485,16 @@ public class FramePrincipale extends CursorTool {
 			}
 
 			@Override
+			public void zoomOnBus(final ReferencedEnvelope env) {
+				jf.getMapPane().setDisplayArea(env);
+			}
+
+			@Override
+			public void zoomOver(final ReferencedEnvelope env) {
+				jf.getMapPane().setDisplayArea(env);
+			}
+
+			@Override
 			public void move(final ReferencedEnvelope env) {
 				jf.getMapPane().setDisplayArea(env);
 				jf.repaint();
@@ -559,16 +566,10 @@ public class FramePrincipale extends CursorTool {
 	private void getDimensionMapPane() {
 		if (jf.getMapContent() != null) {
 			jf.getMapContent().getMaxBounds();
-			ReferencedEnvelope env = jf.getMapContent().getMaxBounds();
+			ReferencedEnvelope env = jf.getMapPane().getDisplayArea();
 			widthMap = env.getWidth();
 			heightMap = env.getHeight();
 		}
-	}
-
-	private void setZoomOver() {
-		ReferencedEnvelope env = jf.getMapPane().getDisplayArea();
-		env.expandBy(widthMap, heightMap);
-		jf.getMapPane().setDisplayArea(env);
 	}
 
 	private void addNewMap(final Layer layer) {

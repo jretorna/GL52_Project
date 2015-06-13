@@ -98,6 +98,19 @@ public class GestionnaireSuivi {
 		fireZoomInOrOut(zoomManager.ZoomPlusOrMoins(_sign, env));
 	}
 
+	public void zoomOver(	final ReferencedEnvelope env,
+							final double width,
+							final double height) {
+		fireZoomOver(zoomManager.setOverZoom(env, width, height));
+	}
+
+	public void zoomOnBus(	final ReferencedEnvelope env,
+							final Coordinate coordA,
+							final Coordinate coordB) {
+		fireZoomOnBus(zoomManager.zoomOnBus(env, coordA, coordB));
+
+	}
+
 	/*----------- Move methods -----------------*/
 	public void move(final int sens, final ReferencedEnvelope env) {
 		// TODO Auto-generated method stub
@@ -185,6 +198,20 @@ public class GestionnaireSuivi {
 		GestionnaireSuiviListener[] listenerList = this.eventListener.getListeners(GestionnaireSuiviListener.class);
 		for (GestionnaireSuiviListener listener : listenerList) {
 			listener.zoomInOrOut(env);
+		}
+	}
+
+	private void fireZoomOver(final ReferencedEnvelope env) {
+		GestionnaireSuiviListener[] listenerList = this.eventListener.getListeners(GestionnaireSuiviListener.class);
+		for (GestionnaireSuiviListener listener : listenerList) {
+			listener.zoomOver(env);
+		}
+	}
+
+	private void fireZoomOnBus(final ReferencedEnvelope env) {
+		GestionnaireSuiviListener[] listenerList = this.eventListener.getListeners(GestionnaireSuiviListener.class);
+		for (GestionnaireSuiviListener listener : listenerList) {
+			listener.zoomOnBus(env);
 		}
 	}
 
